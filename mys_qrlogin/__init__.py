@@ -28,17 +28,17 @@ async def one_more_thing(bot: Bot, ev: Event):
             await bot.send("也没有检测到链接捏")
             return 0
     d=cv2.QRCodeDetector()
-    sess=ClientSession()
-    print(url)
-    image=await sess.request('GET',url)
-    image=await image.read()
-    image=BytesIO(image)
-    image=cv2.imdecode(np.frombuffer(image.read(),np.uint8),cv2.IMREAD_COLOR)
-    url,_,_ = d.detectAndDecode(image)
-    if "https" not in url:
-        await bot.send("没有找到二维码捏")
+    async with ClientSession() as sess:
+        print(url)
+        image=await sess.request('GET',url)
+        image=await image.read()
+        image=BytesIO(image)
+        image=cv2.imdecode(np.frombuffer(image.read(),np.uint8),cv2.IMREAD_COLOR)
+        url,_,_ = d.detectAndDecode(image)
+        if "https" not in url:
+            await bot.send("没有找到二维码捏")
+            return 0
+        print(url)
+        # await sess.close()
+        await bot.send(await qrlogin_game(url,qid))
         return 0
-    print(url)
-    await sess.close()
-    await bot.send(await qrlogin_game(url,qid))
-    return 0
