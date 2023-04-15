@@ -7,7 +7,9 @@
 
 依赖需要 numpy opencv
 
-需要stoken
+pip install numpy opencv-python
+
+需要绑定过stoken
 
 发送 帮帮捏/邦邦捏 并附上二维码图片
 
