@@ -1,3 +1,9 @@
+from gsuid_core.sv import SV
+from gsuid_core.bot import Bot
+from gsuid_core.models import Event
+from .qrlogin import qrlogin_game
+from aiohttp import ClientSession
+
 sv_qrlogin = SV("米哈游游戏扫码登陆")
 @sv_qrlogin.on_fullmatch(("帮帮捏","邦邦捏"))
 async def one_more_thing(bot: Bot, ev: Event):
