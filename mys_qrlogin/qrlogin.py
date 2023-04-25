@@ -11,27 +11,29 @@ from ..gsuid_utils.api.mys.request import _HEADER
 from ..gsuid_utils.api.mys.api import OLD_URL
 from ..utils.database import get_sqla
 from ..utils.mys_api import mys_api
+from ..utils.error_reply import UID_HINT
 
 QR_login_SCAN="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/scan"
 QR_login_CONFIRM="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/confirm"
 GET_GAME_TOKEN = f"{OLD_URL}/auth/api/getGameToken"
 
 
-async def qrlogin_game(url,qid):
+async def qrlogin_game(url,qid,bid = "onebot"):
     if "https://user.mihoyo.com/qr_code_in_game.html" not in url:
         return "链接不正确哦~"
     ticket = url.split("ticket=")[1].split("&")[0]
     app_id=url.split("app_id=")[1].split("&")[0]
     biz_key=url.split("biz_key=")[1].split("&")[0]
     data={"ticket": ticket, "app_id": app_id}
-    for bot_id in gss.active_bot:
-        sqla = get_sqla(bot_id)
-        uid = await sqla.get_bind_uid(qid)
-        code,message=await login_in_game_by_qrcode(data, uid,biz_key)
-        if code != 0:
-            return message
-        else:
-            return "帮帮捏~"
+    sqla = get_sqla(bid)
+    uid = await sqla.get_bind_uid(qid)
+    if uid is None:
+        return UID_HINT
+    code,message=await login_in_game_by_qrcode(data, uid,biz_key)
+    if code != 0:
+        return message
+    else:
+        return "帮帮捏~"
 
 async def get_game_token(uid):
     HEADER = copy.deepcopy(_HEADER)
