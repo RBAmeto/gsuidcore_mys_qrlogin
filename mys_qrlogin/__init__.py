@@ -1,18 +1,8 @@
-from gsuid_core.sv import SV
-from gsuid_core.bot import Bot
-from gsuid_core.models import Event
-# from ..utils.database import get_sqla
-# from ..utils.error_reply import UID_HINT
-# from gsuid_core.gss import gss
-# from gsuid_core.logger import logger
-from .qrlogin import qrlogin_game
-from aiohttp import ClientSession
-
 sv_qrlogin = SV("米哈游游戏扫码登陆")
 @sv_qrlogin.on_fullmatch(("帮帮捏","邦邦捏"))
 async def one_more_thing(bot: Bot, ev: Event):
     qid = ev.user_id
-    
+    bid = ev.bot_id
     from io import BytesIO
     import cv2
     import numpy as np
@@ -22,10 +12,11 @@ async def one_more_thing(bot: Bot, ev: Event):
         if len(str(ev.text).split("https://")) > 1:
             await bot.send("但是检测到链接捏")
             url="https://"+str(ev.text).split("https://")[1]
-            await bot.send(await qrlogin_game(url,qid))
+            msg = await qrlogin_game(url,qid)
+            await bot.send(msg)
             return 0
         else:
-            await bot.send("也没有检测到链接捏")
+            # await bot.send("也没有检测到链接捏")
             return 0
     d=cv2.QRCodeDetector()
     async with ClientSession() as sess:
@@ -40,5 +31,6 @@ async def one_more_thing(bot: Bot, ev: Event):
             return 0
         print(url)
         # await sess.close()
-        await bot.send(await qrlogin_game(url,qid))
+        msg = await qrlogin_game(url,qid,bid)
+        await bot.send(msg)
         return 0
