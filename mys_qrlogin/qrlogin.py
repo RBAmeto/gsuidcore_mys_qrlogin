@@ -6,9 +6,8 @@ import random
 import json
 import asyncio
 from gsuid_core.gss import gss
-from ..gsuid_utils.api.mys.tools import generate_passport_ds
-from ..gsuid_utils.api.mys.request import _HEADER
-from ..gsuid_utils.api.mys.api import OLD_URL
+from gsuid_core.utils.api.mys.tools import generate_passport_ds
+from gsuid_core.utils.api.mys.api import OLD_URL
 from ..utils.database import get_sqla
 from ..utils.mys_api import mys_api
 from ..utils.error_reply import UID_HINT
@@ -36,7 +35,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
         return "帮帮捏~"
 
 async def get_game_token(uid):
-    HEADER = copy.deepcopy(_HEADER)
+    HEADER = copy.deepcopy(mys_api._HEADER)
     HEADER["Cookie"] = await mys_api.get_stoken(uid)
     param = {
         "uid": HEADER["Cookie"].split("stuid=")[1].split(";")[0],
