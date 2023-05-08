@@ -3,7 +3,7 @@
 
 理论支持米游社扫码登陆的所有游戏
 
-将文件夹放入 gsuid_core/plugins/GenshinUID/GenshinUID/ 下即可使用
+将文件夹放入 gsuid_core/plugins/ 下即可使用
 
 依赖需要 numpy opencv
 
