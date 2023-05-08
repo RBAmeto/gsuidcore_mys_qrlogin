@@ -8,14 +8,41 @@ import asyncio
 from gsuid_core.gss import gss
 from gsuid_core.utils.api.mys.tools import generate_passport_ds
 from gsuid_core.utils.api.mys.api import OLD_URL
-from ..utils.database import get_sqla
-from ..utils.mys_api import mys_api
-from ..utils.error_reply import UID_HINT
+from gsuid_core.utils.api.mys import MysApi
+from gsuid_core.utils.error_reply import UID_HINT
+from typing import Dict, Optional
+from sqlalchemy import event
+from gsuid_core.data_store import get_res_path
+from gsuid_core.utils.database.dal import SQLA
 
 QR_login_SCAN="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/scan"
 QR_login_CONFIRM="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/confirm"
 GET_GAME_TOKEN = f"{OLD_URL}/auth/api/getGameToken"
 
+class _MysApi(MysApi):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+mys_api = _MysApi()
+is_wal = False
+
+active_sqla: Dict[str, SQLA] = {}
+db_url = str(get_res_path().parent / 'GsData.db')
+
+def get_sqla(bot_id) -> SQLA:
+    if bot_id not in active_sqla:
+        sqla = SQLA(db_url, bot_id)
+        active_sqla[bot_id] = sqla
+        sqla.create_all()
+
+        @event.listens_for(sqla.engine.sync_engine, 'connect')
+        def engine_connect(conn, branch):
+            if is_wal:
+                cursor = conn.cursor()
+                cursor.execute('PRAGMA journal_mode=WAL')
+                cursor.close()
+
+    return active_sqla[bot_id]
 
 async def qrlogin_game(url,qid,bid = "onebot"):
     if "https://user.mihoyo.com/qr_code_in_game.html" not in url:
@@ -36,7 +63,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
 
 async def get_game_token(uid):
     HEADER = copy.deepcopy(mys_api._HEADER)
-    HEADER["Cookie"] = await mys_api.get_stoken(uid)
+    HEADER["Cookie"] = await get_stoken(uid)
     param = {
         "uid": HEADER["Cookie"].split("stuid=")[1].split(";")[0],
         "stoken": HEADER["Cookie"].split("stoken=")[1].split(";")[0]
@@ -48,6 +75,10 @@ async def get_game_token(uid):
         params=param,
     )
     return HEADER["Cookie"].split("stuid=")[1].split(";")[0], data["data"]["game_token"]
+
+async def get_stoken(uid: str) -> Optional[str]:
+        sqla = get_sqla('TEMP')
+        return await sqla.get_user_stoken(uid)
 
 
 async def login_in_game_by_qrcode(info: dict, uid,biz_key):
@@ -75,7 +106,7 @@ async def login_in_game_by_qrcode(info: dict, uid,biz_key):
     data["device"]=HEADER['x-rpc-device_id']
     print(data)
     HEADER['DS'] = generate_passport_ds(b=data)
-    HEADER["Cookie"] = await mys_api.get_stoken(uid)
+    HEADER["Cookie"] = await get_stoken(uid)
     info=await mys_api._mys_request(
         url=qrscan,
         method='POST',
