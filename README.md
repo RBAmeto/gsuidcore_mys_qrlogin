@@ -1,4 +1,4 @@
-# GenshinUID_mys_qrlogin
+# gsuidcore_mys_qrlogin
 <a href="https://github.com/lulu666lulu/GenshinUID" target="_blank">路路佬</a>制作的<a href="https://github.com/KimigaiiWuyi/GenshinUID" target="_blank">GenshinUID</a> 的二维码登陆游戏小插件
 
 理论支持米游社扫码登陆的所有游戏
