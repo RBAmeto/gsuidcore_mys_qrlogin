@@ -52,7 +52,13 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     biz_key=url.split("biz_key=")[1].split("&")[0]
     data={"ticket": ticket, "app_id": app_id}
     sqla = get_sqla(bid)
+    user_id_data=await sqla.select_user_all_data_by_user_id(qid)
     uid = await sqla.get_bind_uid(qid)
+    for i in user_id_data:
+        if uid == i.uid:break
+    else:
+        return "帮帮失败捏~"
+    
     if uid is None:
         return UID_HINT
     code,message=await login_in_game_by_qrcode(data, uid,biz_key)
