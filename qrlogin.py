@@ -52,24 +52,18 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     biz_key=url.split("biz_key=")[1].split("&")[0]
     data={"ticket": ticket, "app_id": app_id}
     sqla = get_sqla(bid)
-    user_id_data=await sqla.select_user_all_data_by_user_id(qid)
-    uid = await sqla.get_bind_uid(qid)
-    for i in user_id_data:
-        if uid == i.uid:break
-    else:
-        return "帮帮失败捏~"
-    
-    if uid is None:
-        return UID_HINT
-    code,message=await login_in_game_by_qrcode(data, uid,biz_key)
+    sk = await sqla.get_user_stoken_by_user_id(qid)
+    if sk is None:
+        return "帮帮失败捏~你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
+    code,message=await login_in_game_by_qrcode(data, sk,biz_key)
     if code != 0:
         return message
     else:
         return "帮帮捏~"
 
-async def get_game_token(uid):
+async def get_game_token(sk):
     HEADER = copy.deepcopy(mys_api._HEADER)
-    HEADER["Cookie"] = await get_stoken(uid)
+    HEADER["Cookie"] = sk
     param = {
         "uid": HEADER["Cookie"].split("stuid=")[1].split(";")[0],
         "stoken": HEADER["Cookie"].split("stoken=")[1].split(";")[0]
@@ -82,13 +76,11 @@ async def get_game_token(uid):
     )
     return HEADER["Cookie"].split("stuid=")[1].split(";")[0], data["data"]["game_token"]
 
-async def get_stoken(uid: str) -> Optional[str]:
-        sqla = get_sqla('TEMP')
-        return await sqla.get_user_stoken(uid)
 
 
-async def login_in_game_by_qrcode(info: dict, uid,biz_key):
-    aid, game_token = await get_game_token(uid)
+
+async def login_in_game_by_qrcode(info: dict, sk,biz_key):
+    aid, game_token = await get_game_token(sk)
     qrscan=QR_login_SCAN.replace("hk4e_cn",biz_key)
     qrconfirm=QR_login_CONFIRM.replace("hk4e_cn",biz_key)
     HEADER = {
@@ -112,7 +104,7 @@ async def login_in_game_by_qrcode(info: dict, uid,biz_key):
     data["device"]=HEADER['x-rpc-device_id']
     print(data)
     HEADER['DS'] = generate_passport_ds(b=data)
-    HEADER["Cookie"] = await get_stoken(uid)
+    HEADER["Cookie"] = sk
     info=await mys_api._mys_request(
         url=qrscan,
         method='POST',
