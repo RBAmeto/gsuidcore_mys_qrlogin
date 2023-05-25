@@ -5,7 +5,7 @@ from .qrlogin import qrlogin_game
 from aiohttp import ClientSession
 
 sv_qrlogin = SV("米哈游游戏扫码登陆")
-@sv_qrlogin.on_fullmatch(("帮帮捏","邦邦捏"))
+@sv_qrlogin.on_command(("帮帮捏","邦邦捏"))
 async def one_more_thing(bot: Bot, ev: Event):
     qid = ev.user_id
     bid = ev.bot_id

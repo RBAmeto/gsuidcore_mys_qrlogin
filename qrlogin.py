@@ -54,7 +54,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     sqla = get_sqla(bid)
     sk = await sqla.get_user_stoken_by_user_id(qid)
     if sk is None:
-        return "你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
+        return "帮帮失败捏~你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
     code,message=await login_in_game_by_qrcode(data, sk,biz_key)
     if code != 0:
         return message
