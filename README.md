@@ -5,9 +5,13 @@
 
 将文件夹放入 gsuid_core/plugins/ 下即可使用
 
-依赖需要 numpy opencv
+依赖需要 numpy opencv-contrib-python
 
-pip install numpy opencv-python
+pip install numpy opencv-contrib-python
+
+如果仍然报错建议 
+pip uninstall opencv-python
+pip install --force-reinstall opencv-contrib-python
 
 需要绑定过stoken
 
