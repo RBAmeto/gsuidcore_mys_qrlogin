@@ -7,7 +7,9 @@
 
 依赖需要 numpy opencv-contrib-python
 
-pip install numpy opencv-contrib-python
+pip install numpy 
+
+pip install opencv-contrib-python
 
 如果仍然报错建议 
 
