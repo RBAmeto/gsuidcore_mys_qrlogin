@@ -1,19 +1,17 @@
-
 from string import digits, ascii_letters
 import copy
 import uuid
 import random
 import json
 import asyncio
-from gsuid_core.gss import gss
 from gsuid_core.utils.api.mys.tools import generate_passport_ds
 from gsuid_core.utils.api.mys.api import OLD_URL
 from gsuid_core.utils.api.mys import MysApi
-from gsuid_core.utils.error_reply import UID_HINT
 from typing import Dict, Optional
 from sqlalchemy import event
 from gsuid_core.data_store import get_res_path
 from gsuid_core.utils.database.dal import SQLA
+from gsuid_core.utils.database.base_models import engine
 
 QR_login_SCAN="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/scan"
 QR_login_CONFIRM="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/confirm"
@@ -30,19 +28,20 @@ active_sqla: Dict[str, SQLA] = {}
 db_url = str(get_res_path().parent / 'GsData.db')
 
 def get_sqla(bot_id) -> SQLA:
-    if bot_id not in active_sqla:
-        sqla = SQLA(db_url, bot_id)
-        active_sqla[bot_id] = sqla
+    sqla_list = active_sqla
+    if bot_id not in sqla_list:
+        sqla = SQLA(bot_id)
+        sqla_list[bot_id] = sqla
         sqla.create_all()
 
-        @event.listens_for(sqla.engine.sync_engine, 'connect')
-        def engine_connect(conn, branch):
+        @event.listens_for(engine.sync_engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
             if is_wal:
-                cursor = conn.cursor()
-                cursor.execute('PRAGMA journal_mode=WAL')
+                cursor = dbapi_connection.cursor()
+                cursor.execute("PRAGMA journal_mode=WAL")
                 cursor.close()
 
-    return active_sqla[bot_id]
+    return sqla_list[bot_id]
 
 async def qrlogin_game(url,qid,bid = "onebot"):
     if "https://user.mihoyo.com/qr_code_in_game.html" not in url:
@@ -54,7 +53,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     sqla = get_sqla(bid)
     sk = await sqla.get_user_stoken_by_user_id(qid)
     if sk is None:
-        return "帮帮失败捏~你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
+        return "你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
     code,message=await login_in_game_by_qrcode(data, sk,biz_key)
     if code != 0:
         return message
@@ -111,8 +110,12 @@ async def login_in_game_by_qrcode(info: dict, sk,biz_key):
         header=HEADER,
         data=data,
     )
-    print(info)
-    if info["message"] != "OK":
+    if isinstance(info,int):
+        if info == -106:
+            return info,"二维码过期啦"
+        else:
+            return info,f"出错码{info}"
+    if not info["message"] == "OK":
         return info["retcode"],info["message"]
     data["payload"] = {
         "proto": "Account",
