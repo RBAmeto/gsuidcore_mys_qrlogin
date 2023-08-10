@@ -10,7 +10,9 @@
 pip install numpy opencv-contrib-python
 
 如果仍然报错建议 
+
 pip uninstall opencv-python
+
 pip install --force-reinstall opencv-contrib-python
 
 需要绑定过stoken
