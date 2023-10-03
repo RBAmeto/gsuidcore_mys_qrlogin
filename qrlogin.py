@@ -8,10 +8,7 @@ from gsuid_core.utils.api.mys.tools import generate_passport_ds
 from gsuid_core.utils.api.mys.api import OLD_URL
 from gsuid_core.utils.api.mys import MysApi
 from typing import Dict, Optional
-from sqlalchemy import event
-from gsuid_core.data_store import get_res_path
-from gsuid_core.utils.database.dal import SQLA
-from gsuid_core.utils.database.base_models import engine
+from gsuid_core.utils.database.models import GsUser
 
 QR_login_SCAN="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/scan"
 QR_login_CONFIRM="https://api-sdk.mihoyo.com/hk4e_cn/combo/panda/qrcode/confirm"
@@ -22,26 +19,7 @@ class _MysApi(MysApi):
         super().__init__(*args, **kwargs)
 
 mys_api = _MysApi()
-is_wal = False
 
-active_sqla: Dict[str, SQLA] = {}
-db_url = str(get_res_path().parent / 'GsData.db')
-
-def get_sqla(bot_id) -> SQLA:
-    sqla_list = active_sqla
-    if bot_id not in sqla_list:
-        sqla = SQLA(bot_id)
-        sqla_list[bot_id] = sqla
-        sqla.create_all()
-
-        @event.listens_for(engine.sync_engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, connection_record):
-            if is_wal:
-                cursor = dbapi_connection.cursor()
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.close()
-
-    return sqla_list[bot_id]
 
 async def qrlogin_game(url,qid,bid = "onebot"):
     if "https://user.mihoyo.com/qr_code_in_game.html" not in url:
@@ -50,8 +28,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     app_id=url.split("app_id=")[1].split("&")[0]
     biz_key=url.split("biz_key=")[1].split("&")[0]
     data={"ticket": ticket, "app_id": app_id}
-    sqla = get_sqla(bid)
-    sk = await sqla.get_user_stoken_by_user_id(qid)
+    sk = await GsUser.get_user_stoken_by_user_id(qid, bid)
     if sk is None:
         return "你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
     code,message=await login_in_game_by_qrcode(data, sk,biz_key)
