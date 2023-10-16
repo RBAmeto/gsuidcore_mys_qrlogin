@@ -30,7 +30,7 @@ async def qrlogin_game(url,qid,bid = "onebot"):
     data={"ticket": ticket, "app_id": app_id}
     sk = await GsUser.get_user_stoken_by_user_id(qid, bid)
     if sk is None:
-        return "你还没有绑定过Stoken或者Stoken已失效~\n请群聊发送 [扫码登陆] \n或 私聊[添加]后跟SK格式 以绑定SK"
+        return "你还没有绑定过Stoken~\n请发送 [扫码登陆]"
     code,message=await login_in_game_by_qrcode(data, sk,biz_key)
     if code != 0:
         return message
@@ -50,13 +50,16 @@ async def get_game_token(sk):
         header=HEADER,
         params=param,
     )
-    return HEADER["Cookie"].split("stuid=")[1].split(";")[0], data["data"]["game_token"]
+    return HEADER["Cookie"].split("stuid=")[1].split(";")[0], data
 
 
 
 
 async def login_in_game_by_qrcode(info: dict, sk,biz_key):
     aid, game_token = await get_game_token(sk)
+    if isinstance(game_token, int):
+        return -999,"Stoken已失效~\n请发送 [扫码登陆]"
+    game_token = game_token["data"]["game_token"]
     qrscan=QR_login_SCAN.replace("hk4e_cn",biz_key)
     qrconfirm=QR_login_CONFIRM.replace("hk4e_cn",biz_key)
     HEADER = {
@@ -90,6 +93,8 @@ async def login_in_game_by_qrcode(info: dict, sk,biz_key):
     if isinstance(info,int):
         if info == -106:
             return info,"二维码过期啦"
+        elif info == -107:
+            return info,"二维码扫过啦"
         else:
             return info,f"出错码{info}"
     if not info["message"] == "OK":
