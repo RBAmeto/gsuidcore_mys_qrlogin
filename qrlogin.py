@@ -4,7 +4,7 @@ import uuid
 import random
 import json
 import asyncio
-from gsuid_core.utils.api.mys.tools import generate_passport_ds
+from gsuid_core.utils.api.mys.tools import generate_passport_ds, mys_version
 from gsuid_core.utils.api.mys.api import OLD_URL
 from gsuid_core.utils.api.mys import MysApi
 from typing import Dict, Optional
@@ -63,7 +63,7 @@ async def login_in_game_by_qrcode(info: dict, sk,biz_key):
     qrscan=QR_login_SCAN.replace("hk4e_cn",biz_key)
     qrconfirm=QR_login_CONFIRM.replace("hk4e_cn",biz_key)
     HEADER = {
-        'x-rpc-app_version': '2.41.0',
+        'x-rpc-app_version': mys_version,
         'x-rpc-aigis': '',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
