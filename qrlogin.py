@@ -69,16 +69,25 @@ async def login_in_game_by_qrcode(info: dict, sk,biz_key):
         'Accept': 'application/json',
         'x-rpc-game_biz': 'bbs_cn',
         'x-rpc-sys_version': '11',
-        'x-rpc-device_id': uuid.uuid4().hex,
-        'x-rpc-device_fp': ''.join(
-            random.choices(ascii_letters + digits, k=13)
-        ),
-        'x-rpc-device_name': 'GenshinUid_login_device_lulu',
-        'x-rpc-device_model': 'GenshinUid_login_device_lulu',
         'x-rpc-app_id': 'bll8iq97cem8',
         'x-rpc-client_type': '2',
         'User-Agent': 'okhttp/4.8.0',
     }
+    user_data = await GsUser.base_select_data(stoken=sk)
+    if user_data and user_data.fp:
+        HEADER["x-rpc-device_fp"] = user_data.fp
+        HEADER["x-rpc-device_id"] = user_data.device_id
+        if user_data.device_info:
+            device_info = user_data.device_info.split('/')
+            HEADER['x-rpc-device_name'] = f"{device_info[0]} {device_info[1]}"
+            HEADER['x-rpc-device_model'] = device_info[1]
+        else:
+            HEADER['x-rpc-device_name'] = 'GenshinUid_login_device_lulu'
+            HEADER['x-rpc-device_model'] = 'GenshinUid_login_device_lulu'
+    else:
+        HEADER["x-rpc-device_fp"] = ''.join(random.choices(ascii_letters + digits, k=13))
+        HEADER["x-rpc-device_id"] = uuid.uuid4().hex
+
     data = info
     data["device"]=HEADER['x-rpc-device_id']
     print(data)
