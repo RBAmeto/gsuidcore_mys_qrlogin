@@ -2,7 +2,7 @@ from gsuid_core.sv import SV
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
 from .qrlogin import qrlogin_game
-from aiohttp import ClientSession
+from httpx import AsyncClient
 
 sv_qrlogin = SV("米哈游游戏扫码登陆")
 @sv_qrlogin.on_fullmatch(("帮帮捏","邦邦捏"))
@@ -25,11 +25,9 @@ async def one_more_thing(bot: Bot, ev: Event):
             # await bot.send("也没有检测到链接捏")
             return 0
     d=cv2.wechat_qrcode_WeChatQRCode()
-    async with ClientSession() as sess:
-        print(url)
-        image=await sess.request('GET',url)
-        image=await image.read()
-        image=BytesIO(image)
+    async with AsyncClient() as sess:
+        resp = await sess.get(url)
+        image=BytesIO(resp.content)
         image=cv2.imdecode(np.frombuffer(image.read(),np.uint8),cv2.IMREAD_COLOR)
         res, _ = d.detectAndDecode(image)
         for i in res:
@@ -40,7 +38,6 @@ async def one_more_thing(bot: Bot, ev: Event):
             await bot.send("没有找到二维码捏")
             return 0
         print(url)
-        # await sess.close()
         msg = await qrlogin_game(url, qid, bid)
         await bot.send(msg)
         return 0
