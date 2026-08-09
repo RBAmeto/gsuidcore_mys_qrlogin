@@ -72,7 +72,10 @@ def _parse_qr_url(url: str) -> dict:
 
 
 def _sdk_url(biz_key: str) -> str:
-    game = biz_key.split("_", 1)[0]
+    if biz_key == "bh3_cn":
+        game = "api"
+    else:
+        game = biz_key.split("_", 1)[0]
     return QR_LOGIN_SCAN.format(game=game, biz_key=biz_key)
 
 
